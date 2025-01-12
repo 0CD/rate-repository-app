@@ -1,9 +1,11 @@
-import { View, TextInput, Pressable, StyleSheet, Alert } from 'react-native';
+import { View, TextInput, Pressable, StyleSheet } from 'react-native';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 import useSignIn from '../hooks/useSignIn';
 import Text from './Text';
 import { useNavigate } from 'react-router-native';
+import { useMutation } from '@apollo/client';
+import { CREATE_USER } from '../graphql/mutations';
 
 const styles = StyleSheet.create({
   container: {
@@ -35,15 +37,28 @@ const styles = StyleSheet.create({
 });
 
 const validationSchema = yup.object().shape({
-  username: yup.string().required('Username is required'),
-  password: yup.string().required('Password is required'),
+  username: yup
+    .string()
+    .min(5, 'Username must be at least 5 characters')
+    .max(30, 'Username must be at most 30 characters')
+    .required('Username is required'),
+  password: yup
+    .string()
+    .min(5, 'Password must be at least 5 characters')
+    .max(50, 'Password must be at most 50 characters')
+    .required('Password is required'),
+  passwordConfirmation: yup
+    .string()
+    .oneOf([yup.ref('password'), null], 'Passwords must match')
+    .required('Password confirmation is required'),
 });
 
-export const SignInContainer = ({ onSubmit }) => {
+export const SignUpContainer = ({ onSubmit }) => {
   const formik = useFormik({
     initialValues: {
       username: '',
       password: '',
+      passwordConfirmation: '',
     },
     validationSchema,
     onSubmit: (values) => {
@@ -78,34 +93,60 @@ export const SignInContainer = ({ onSubmit }) => {
           <Text style={styles.errorText}>{formik.errors.password}</Text>
         )}
       </View>
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={[
+            styles.input,
+            formik.touched.passwordConfirmation && formik.errors.passwordConfirmation && styles.errorInput,
+          ]}
+          secureTextEntry
+          placeholder='Password confirmation'
+          value={formik.values.passwordConfirmation}
+          onChangeText={formik.handleChange('passwordConfirmation')}
+          onBlur={formik.handleBlur('passwordConfirmation')}
+        />
+        {formik.touched.passwordConfirmation && formik.errors.passwordConfirmation && (
+          <Text style={styles.errorText}>{formik.errors.passwordConfirmation}</Text>
+        )}
+      </View>
       <Pressable style={styles.button} onPress={formik.handleSubmit}>
         <Text style={{ color: 'white' }} fontWeight='bold'>
-          Sign in
+          Sign up
         </Text>
       </Pressable>
     </View>
   );
 };
 
-const SignIn = () => {
+const SignUp = () => {
   const [signIn] = useSignIn();
+  const [createUser] = useMutation(CREATE_USER);
   const navigate = useNavigate();
 
   const onSubmit = async (values) => {
     const { username, password } = values;
 
     try {
+      await createUser({
+        variables: {
+          user: {
+            username,
+            password,
+          },
+        },
+      });
+
       const { authenticate } = await signIn({ username, password });
+
       if (authenticate) {
         navigate('/');
       }
     } catch (e) {
-      const message = e.graphQLErrors?.[0]?.message || 'Something went wrong';
-      Alert.alert('Error', message);
+      console.log(e);
     }
   };
 
-  return <SignInContainer onSubmit={onSubmit} />;
+  return <SignUpContainer onSubmit={onSubmit} />;
 };
 
-export default SignIn;
+export default SignUp;

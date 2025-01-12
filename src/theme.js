@@ -7,10 +7,12 @@ const theme = {
     primary: '#0366d6',
     backgroundPrimary: '#e1e4e8',
     appBar: '#24292e',
+    appBarPressed: '#000',
   },
   fontSizes: {
     body: 14,
     subheading: 16,
+    heading: 18,
   },
   fonts: {
     main: Platform.select({

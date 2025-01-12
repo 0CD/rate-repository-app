@@ -1,14 +1,18 @@
 import { Pressable, StyleSheet } from 'react-native';
 import { Link } from 'react-router-native';
 import Text from './Text';
+import theme from '../theme';
 
 const styles = StyleSheet.create({
   tab: {
-    flexGrow: 0,
-    padding: 15,
+    padding: 20,
   },
   text: {
     color: 'white',
+  },
+  pressed: {
+    opacity: 0.7,
+    backgroundColor: theme.colors.appBarPressed,
   },
 });
 
@@ -28,7 +32,7 @@ const AppBarTab = ({ children, to, onPress }) => {
   }
 
   return (
-    <Pressable onPress={onPress} style={styles.tab}>
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.tab, pressed && styles.pressed]}>
       {content}
     </Pressable>
   );
